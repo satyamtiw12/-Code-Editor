@@ -5,7 +5,8 @@ import Sidebar from "./Sidebar";
 import Chat from "./Chat";
 import "../App.css";
 
-const socket = io("http://localhost:5000");
+// const socket = io("http://localhost:5000");
+const socket = io("https://code-editor-h4p5.onrender.com");
 
 const Editor = ({ user, onLeave }) => {
   const { roomId, userName } = user;

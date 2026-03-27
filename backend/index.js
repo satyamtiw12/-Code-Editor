@@ -45,9 +45,28 @@ io.on("connection", (socket) => {
     currentUser = userName;
     socket.join(roomId);
     if (!rooms.has(roomId)) rooms.set(roomId, new Set());
-    rooms.get(roomId).add(userName);
-    io.to(roomId).emit("userJoined", Array.from(rooms.get(currentRoom)));
-  });
+  //   rooms.get(roomId).add(userName);
+  //   io.to(roomId).emit("userJoined", Array.from(rooms.get(currentRoom)));
+  // });
+
+  if (!rooms.has(roomId)) rooms.set(roomId, new Set());
+
+// user object store karo
+rooms.get(roomId).add({
+  id: socket.id,
+  name: userName,
+});
+
+// updated users bhejo
+io.to(roomId).emit(
+  "userJoined",
+  Array.from(rooms.get(roomId))
+);
+
+
+
+
+
 
   socket.on("codeChange", ({ roomId, code }) => {
     socket.to(roomId).emit("codeUpdate", code);
@@ -83,7 +102,28 @@ io.on("connection", (socket) => {
 
   socket.on("leaveRoom", () => {
     if (currentRoom && currentUser) {
-      rooms.get(currentRoom)?.delete(currentUser);
+      // rooms.get(currentRoom)?.delete(currentUser);
+
+      const usersSet = rooms.get(currentRoom);
+
+if (usersSet) {
+  for (let u of usersSet) {
+    if (u.id === socket.id) {
+      usersSet.delete(u);
+      break;
+    }
+  }
+}
+
+io.to(currentRoom).emit(
+  "userJoined",
+  Array.from(usersSet || [])
+);
+
+
+
+
+
       io.to(currentRoom).emit("userJoined", Array.from(rooms.get(currentRoom) || []));
       socket.leave(currentRoom);
       currentRoom = null;
@@ -93,7 +133,26 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     if (currentRoom && currentUser) {
-      rooms.get(currentRoom)?.delete(currentUser);
+      // rooms.get(currentRoom)?.delete(currentUser);
+
+      const usersSet = rooms.get(currentRoom);
+
+if (usersSet) {
+  for (let u of usersSet) {
+    if (u.id === socket.id) {
+      usersSet.delete(u);
+      break;
+    }
+  }
+}
+
+io.to(currentRoom).emit(
+  "userJoined",
+  Array.from(usersSet || [])
+);
+
+
+
       io.to(currentRoom).emit("userJoined", Array.from(rooms.get(currentRoom) || []));
     }
     console.log("user disconnected");

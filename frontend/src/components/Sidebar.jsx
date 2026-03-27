@@ -32,12 +32,22 @@ const Sidebar = ({
 
       <div className="users-section">
         <p className="section-label">Users ({users.length})</p>
-        {users.map((u, i) => (
+        {/* {users.map((u, i) => (
           <div className="user-item" key={i}>
             <span className="user-dot"></span>
             <span className="user-name">{u}</span>
           </div>
-        ))}
+        ))} */}
+
+
+        {users.map((u) => (
+  <div className="user-item" key={u.id || u}>
+    <span className="user-dot"></span>
+    <span className="user-name">{u.name || u}</span>
+  </div>
+))}   
+
+
         {typing && <p className="typing-text">{typing}</p>}
       </div>
 
