@@ -190,23 +190,59 @@ const Editor = ({ user, onLeave }) => {
     }
   };
 
+  // const startVoice = async () => {
+  //   try {
+  //     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  //     localStream.current = stream;
+  //     setMicOn(true);
+  //     users.forEach(async (u) => {
+  //       if (u === userName) return;
+  //       const pc = createPeerConnection(socket.id + u);
+  //       stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+  //       const offer = await pc.createOffer();
+  //       await pc.setLocalDescription(offer);
+  //       socket.emit("voice-offer", { roomId, offer, to: u });
+  //     });
+  //   } catch {
+  //     alert("Mic access nahi mila!");
+  //   }
+  // };
+
+
+
+
+
   const startVoice = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      localStream.current = stream;
-      setMicOn(true);
-      users.forEach(async (u) => {
-        if (u === userName) return;
-        const pc = createPeerConnection(socket.id + u);
-        stream.getTracks().forEach((t) => pc.addTrack(t, stream));
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        socket.emit("voice-offer", { roomId, offer, to: u });
-      });
-    } catch {
-      alert("Mic access nahi mila!");
-    }
-  };
+  let stream = null;
+
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    localStream.current = stream;
+    setMicOn(true);
+  } catch (err) {
+    console.log("Mic blocked, continue without voice");
+    setMicOn(false);
+    return; // 👉 IMPORTANT
+  }
+
+  users.forEach(async (u) => {
+    if (u.id === socket.id) return;
+
+    const pc = createPeerConnection(u.id);
+    stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    socket.emit("voice-offer", { offer, to: u.id });
+  });
+};
+
+
+
+
+
+
 
   const stopVoice = () => {
     localStream.current?.getTracks().forEach((t) => t.stop());
