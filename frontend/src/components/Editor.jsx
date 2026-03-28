@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { io } from "socket.io-client";
-import MonacoEditor from "@monaco-editor/react";
+// import MonacoEditor from "@monaco-editor/react";
+import MonacoEditor, { useMonaco } from "@monaco-editor/react";
 import Sidebar from "./Sidebar";
 import Chat from "./Chat";
 import "../App.css";
@@ -23,6 +24,8 @@ const Editor = ({ user, onLeave }) => {
   const [outputHeight, setOutputHeight] = useState(150);
   const isDragging = useRef(false);
   const [fontSize, setFontSize] = useState(14);
+  const monaco = useMonaco();
+  const editorRef = useRef(null);
 
   const localStream = useRef(null);
   const peerConnections = useRef({});
@@ -113,10 +116,51 @@ const Editor = ({ user, onLeave }) => {
 
 
 
+  // const handleCodeChange = (val) => {
+  //   setCode(val);
+  //   socket.emit("codeChange", { roomId, code: val });
+  //   socket.emit("typing", { roomId, userName });
+  // };
+
+   // ye java code ko handel karega
   const handleCodeChange = (val) => {
     setCode(val);
     socket.emit("codeChange", { roomId, code: val });
     socket.emit("typing", { roomId, userName });
+
+    // Real-time error check
+    if (language === "java" && monaco && editorRef.current) {
+      clearTimeout(window._errorTimer);
+      window._errorTimer = setTimeout(async () => {
+        try {
+          const res = await fetch("https://code-editor-h4p5.onrender.com/check", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: val, language }),
+          });
+          const data = await res.json();
+          const errors = [];
+          if (data.errors) {
+            const lineMatches = [...data.errors.matchAll(/\.java:(\d+):/g)];
+            lineMatches.forEach(match => {
+              errors.push({
+                startLineNumber: parseInt(match[1]),
+                endLineNumber: parseInt(match[1]),
+                startColumn: 1,
+                endColumn: 200,
+                message: data.errors,
+                severity: monaco.MarkerSeverity.Error,
+              });
+            });
+          }
+          monaco.editor.setModelMarkers(
+            editorRef.current.getModel(),
+            "errors",
+            errors
+          );
+        } catch(e) {}
+      }, 1000);
+    }
   };
 
   const handleLanguageChange = (lang) => {
@@ -335,7 +379,16 @@ const Editor = ({ user, onLeave }) => {
           onChange={handleCodeChange}
           theme="vs-dark"
           // options={{ fontSize: 14, minimap: { enabled: false } }}
-          options={{ fontSize: fontSize, minimap: { enabled: false } }}
+          // options={{ fontSize: fontSize, minimap: { enabled: false } }}
+          options={{ 
+  fontSize: fontSize, 
+  minimap: { enabled: false },
+  automaticLayout: true,
+  // Real-time validation
+  validate: true,
+  // JavaScript/TypeScript errors
+  checkJs: true,
+}}
         />
         {showOutput && (
           <div className="output-container" style={{ height: `${outputHeight}px` }}>
