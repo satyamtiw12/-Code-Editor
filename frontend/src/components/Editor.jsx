@@ -22,6 +22,7 @@ const Editor = ({ user, onLeave }) => {
   const [showOutput, setShowOutput] = useState(true);
   const [outputHeight, setOutputHeight] = useState(150);
   const isDragging = useRef(false);
+  const [fontSize, setFontSize] = useState(14);
 
   const localStream = useRef(null);
   const peerConnections = useRef({});
@@ -88,6 +89,29 @@ const Editor = ({ user, onLeave }) => {
       socket.off("ice-candidate");
     };
   }, []);
+
+
+  // zoom effect 
+  useEffect(() => {
+  const handleZoom = (e) => {
+    if (e.ctrlKey && e.key === "=") {
+      e.preventDefault();
+      setFontSize(f => Math.min(f + 2, 40));
+    }
+    if (e.ctrlKey && e.key === "-") {
+      e.preventDefault();
+      setFontSize(f => Math.max(f - 2, 8));
+    }
+    if (e.ctrlKey && e.key === "0") {
+      e.preventDefault();
+      setFontSize(14);
+    }
+  };
+  window.addEventListener("keydown", handleZoom);
+  return () => window.removeEventListener("keydown", handleZoom);
+}, []);
+
+
 
   const handleCodeChange = (val) => {
     setCode(val);
@@ -310,7 +334,8 @@ const Editor = ({ user, onLeave }) => {
           value={code}
           onChange={handleCodeChange}
           theme="vs-dark"
-          options={{ fontSize: 14, minimap: { enabled: false } }}
+          // options={{ fontSize: 14, minimap: { enabled: false } }}
+          options={{ fontSize: fontSize, minimap: { enabled: false } }}
         />
         {showOutput && (
           <div className="output-container" style={{ height: `${outputHeight}px` }}>
@@ -346,5 +371,23 @@ const Editor = ({ user, onLeave }) => {
     </div>
   );
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export default Editor;
